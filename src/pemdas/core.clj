@@ -1,57 +1,139 @@
 (ns pemdas.core
+  (:require [clojure.string :as s :only [trim]])
+  (:require [clojure.math.numeric-tower :as math])
   (:gen-class))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
- )
+(def ^{:private true} exit-tokens #{"exit" "quit" "bye"})
 
-(defn tokenize [expr]
-  (let [to-chars #(clojure.string/split (clojure.string/replace % " " "") #"")
-        is-digit? #(and % (re-find #"^\d+$" %))]
-    (reverse
-      (reduce
-        (fn [[t & ts :as tokens] token]
-          (if (and (is-digit? token) (is-digit? t))
-            (cons (str t token) ts)
-            (cons token tokens)))
-        '(), (to-chars expr)))))
+(def ^{:private true} running (atom true))
 
-(defn shunting-yard [tokens]
-  (let [ops {"+" 1, "-" 1, "*" 2, "/" 2, "^" 2}]
-    (flatten
-      (reduce
-        (fn [[rpn stack] token]
-          (let [less-op? #(and (contains? ops %) (<= (ops token) (ops %)))
-                not-open-paren? #(not= "(" %)]
-            (cond
-              (= token "(") [rpn (cons token stack)]
-              (= token ")") [(vec (concat rpn (take-while not-open-paren? stack))) (rest (drop-while not-open-paren? stack))]
-              (contains? ops token) [(vec (concat rpn (take-while less-op? stack))) (cons token (drop-while less-op? stack))]
-              :else [(conj rpn token) stack])))
-        [[] ()]
-        tokens))))
+(defn- should-exit-on [input]
+  (if (or (nil? input) ;; handle Ctrl-D
+          (exit-tokens (s/trim input)))
+    (do (println "Bye!")
+        (swap! running (fn [& args] false)))
+    input))
 
-(defn pow [x n]
-  (loop [acc 1 n n]
-    (if (zero? n) acc
-        (recur (* x acc) (dec n)))))
+(defn- display-instructions []
+  (println "Calculator 1.0")
+;;   (println calc/instructions)
+  (println "Type" (apply str (interpose ", "  exit-tokens))
+           "or Ctrl-D to exit."))
+
+(def prio
+  {'+ 0 ; Define operator priority here
+   '- 0
+   '* 1
+   '/ 1
+   'l -1
+   'r -1
+   'dummy -2})
+
+(def operators #{'+ '- '* '/ 'sqr})
+
+(defn pre-process [s]
+  "Seperate operands with operators and replace ( with l, ) with r"
+  (re-seq #"\d+|[\+\-\*\/lr]"
+          (clojure.string/replace s #"\(|\)" {"(" "l" ")" "r"})))
+
+(defn calc-once [stk]
+  "Take one operator from operator stack and apply it to
+  top two numbers in operand stack"
+  (let [opt (:opt stk)
+        num (:num stk)
+        tmp-num (pop (pop num))
+        tmp-opt (pop opt)
+        last-two-num [(peek (pop num)) (peek num)]
+        last-opt (peek opt)]
+    (assoc stk
+           :num (conj tmp-num (apply (eval last-opt) last-two-num))
+           :opt tmp-opt)))
+
+(defn process-stk [stk checker fn-ret]
+  (loop [stk stk]
+    (if (checker stk)
+      (recur (calc-once stk))
+      (fn-ret stk))))
+
+(defn- sqr
+  "Uses the numeric tower expt to square a number"
+  [x]
+  (math/expt x 2))
+
+(defn calc
+  "A simple calculator"
+  [s]
+  (try
+      (process-stk
+        (reduce
+          (fn [stk item]
+            (let [item (read-string item)
+                  add-to-num #(assoc %1 :num (conj (:num %1) %2))
+                  add-to-opt #(assoc %1 :opt (conj (:opt %1) %2))
+                  item-prio (get prio item)
+                  last-prio #(get prio (peek (:opt %)))]
+              (cond
+                (number? item) ; It's number
+                (add-to-num stk item)
+                (get operators item) ; It's operator
+                (process-stk stk #(<= item-prio (last-prio %))
+                             #(add-to-opt % item))
+                (= 'l item) ; (
+                (add-to-opt stk item)
+                (= 'r item) ; )
+                (process-stk stk #(not= (peek (:opt %)) 'l)
+                             #(assoc % :opt (pop (:opt %))))
+                :else
+                (println "Unexpected syntax: " item))))
+          (apply (partial list {:num '() :opt '(dummy)}) ;; Basic structure of stack
+                 s))
+        #(> (count (:opt %)) 1)
+        #(peek (:num %)))
+       (catch Exception e (str "Caught Exception: " (.getMessage e)))))
+;; (calc pre-process (read-line))
 
 
-(defn rpn [tokens]
-  (let [ops {"+" +, "-" -, "*" *, "/" /, "^" pow}]
-    (first
-      (reduce
-        (fn [stack token]
-          (if (contains? ops token)
-            (cons ((ops token) (second stack) (first stack)) (drop 2 stack))
-            (cons (read-string token) stack)))
-        [] tokens))))
+(defn -main [& args]
+  (display-instructions)
+  (loop [input (read-line)]
+    (when-not (or (nil? input)
+                  (exit-tokens (s/trim input)))
+      (println "Enter Expression:")
+      (println "=> " (format "%.3f" (double (calc (pre-process (read-line)))))) ;; <!--print float -->
+       (recur (read-line))))
+  (println "Bye!"))
+;;     (println "Enter an expression:")
+;;     (if-let [input (should-exit-on (read-line))]
+;;       (println "=> " (calc input)))))
 
-(def log #(do (println %) %))
 
-(def calc (comp rpn shunting-yard tokenize))
+;; (defn -main [& args]
+;;   (display-instructions)
+;;   (while @running
+;;     (println "Do you want to do a calculation?")
+;;     (should-exit-on (read-line))
+;;     (println "enter expression:")
+;;     (println "=> " (calc (pre-process (read-line))))
+;;     ))
+;;     (if-let [input (should-exit-on (read-line))]
+;; ;;     (let [input (read-line)])
+;;       (if (or (nil? input) ;; handle Ctrl-D
+;;             (exit-tokens (s/trim input)))
+;;         (do (println "Bye!")
+;;           (swap! running (fn [& args] false)))
+;; ;;       (println "enter expression:")
+;;       (println "=> " (calc (pre-process (read-line))))))))
+;;     (if-let [input (should-exit-on (read-line))]
+;;       (println "=> " (calc (pre-process (read-line)))))))
 
-(def calc-debug (comp rpn log shunting-yard log tokenize))
 
-(println (calc-debug "1 + 1  * 2"))
+
+
+;; (defn -main [& args]
+;; ;;     (loop [input (get-input "What is your decision?")]
+;; ;; ;;       (calc pre-process (str input))
+;; ;;       (println input)
+;;   (println "Pema Calculator")
+;;   (while true
+;;     (let[ input (read-line)]
+;;     (println(calc (pre-process (input)))))))
