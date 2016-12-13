@@ -1,10 +1,6 @@
 (ns pemdas.core
   (:gen-class))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
- )
 
 (defn tokenize [expr]
   (let [to-chars #(clojure.string/split (clojure.string/replace % " " "") #"")
@@ -50,8 +46,26 @@
 
 (def log #(do (println %) %))
 
-(def calc (comp rpn shunting-yard tokenize))
+(defn calc
+  [input]
+  (rpn (shunting-yard (tokenize input))))
 
 (def calc-debug (comp rpn log shunting-yard log tokenize))
+(println (calc "1 + 1  * 2"))
 
-(println (calc-debug "1 + 1  * 2"))
+(defn -main
+  "PEMDAS calculator written in clojure. Type 'quit' to stop"
+  [& args]
+  (println "This is a PEMDAS calculator written in clojure")
+  (println "We support '*, / +, -, (), ^' ")
+  (println "Please entern your expression in one line. Type 'quit' to exit")
+  (loop [input (read-line)]
+      (if (compare input "quit")
+        (println "You cannot beat me. Sorry human")
+        (do
+          (println input "= " (calc input))
+          (println "Too easy. Next please sir")
+          (recur (read-line))))
+    )
+ )
+
