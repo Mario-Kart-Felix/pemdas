@@ -1,0 +1,50 @@
+For the JSON library to be available, you may have to install libjson-ruby from your package manager.
+
+To use the 'json' library:
+
+require 'json'
+To convert an object to JSON (these 3 ways are equivalent):
+
+JSON.dump object #returns a JSON string
+JSON.generate object #returns a JSON string
+object.to_json #returns a JSON string
+To convert JSON text to an object (these 2 ways are equivalent):
+
+JSON.load string #returns an object
+JSON.parse string #returns an object
+It will be a bit more difficult for objects from your own classes. For the following class, to_json will produce something like "\"#<A:0xb76e5728>\"".
+
+class A
+    def initialize a=[1,2,3], b='hello'
+        @a = a
+        @b = b
+    end
+end
+This probably isn't desirable. To effectively serialise your object as JSON, you should create your own to_json method. To go with this, a from_json class method would be useful. You could extend your class like so:
+
+class A
+    def to_json
+        {'a' => @a, 'b' => @b}.to_json
+    end
+    def self.from_json string
+        data = JSON.load string
+        self.new data['a'], data['b']
+    end
+end
+You could automate this by inheriting from a 'JSONable' class:
+
+class JSONable
+    def to_json
+        hash = {}
+        self.instance_variables.each do |var|
+            hash[var] = self.instance_variable_get var
+        end
+        hash.to_json
+    end
+    def from_json! string
+        JSON.load(string).each do |var, val|
+            self.instance_variable_set var, val
+        end
+    end
+end
+Then you can use object.to_json to serialise to JSON and object.from_json! string to copy the saved state that was saved as the JSON string to the object.
