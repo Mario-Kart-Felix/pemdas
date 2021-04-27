@@ -1,0 +1,264 @@
+HomeCore 2.4.0Std-lib 2.4.0Downloads
+  
+Home Classes Methods
+In Files
+openssl/lib/openssl/x509.rb
+openssl/ossl_x509attr.c
+Parent
+Object
+
+Methods
+::new
+#==
+#add_extension
+#check_private_key
+#extensions
+#extensions=
+#initialize_copy
+#inspect
+#issuer
+#issuer=
+#not_after
+#not_after=
+#not_before
+#not_before=
+#pretty_print
+#public_key
+#public_key=
+#serial
+#serial=
+#sign
+#signature_algorithm
+#subject
+#subject=
+#to_der
+#to_pem
+#to_s
+#to_text
+#verify
+#version
+#version=
+Included Modules
+OpenSSL::X509::Marshal
+OpenSSL::X509::Extension::SubjectKeyIdentifier
+OpenSSL::X509::Extension::AuthorityKeyIdentifier
+OpenSSL::X509::Extension::CRLDistributionPoints
+OpenSSL::X509::Extension::AuthorityInfoAccess
+Class/Module Index[+]
+IO
+IO::WaitReadable
+IO::WaitWritable
+Integer
+OpenSSL
+OpenSSL::ASN1
+OpenSSL::ASN1::ASN1Data
+OpenSSL::ASN1::ASN1Error
+OpenSSL::ASN1::Constructive
+OpenSSL::ASN1::ObjectId
+OpenSSL::ASN1::Primitive
+OpenSSL::BN
+OpenSSL::BNError
+OpenSSL::Buffering
+OpenSSL::Buffering::Buffer
+OpenSSL::Cipher
+OpenSSL::Cipher::Cipher
+OpenSSL::Cipher::CipherError
+OpenSSL::Config
+OpenSSL::ConfigError
+OpenSSL::Digest
+OpenSSL::Digest::DigestError
+OpenSSL::Engine
+OpenSSL::Engine::EngineError
+OpenSSL::ExtConfig
+OpenSSL::HMAC
+OpenSSL::HMACError
+OpenSSL::KDF
+OpenSSL::KDF::KDFError
+OpenSSL::Netscape
+OpenSSL::Netscape::SPKI
+OpenSSL::Netscape::SPKIError
+OpenSSL::OCSP
+OpenSSL::OCSP::BasicResponse
+OpenSSL::OCSP::CertificateId
+OpenSSL::OCSP::OCSPError
+OpenSSL::OCSP::Request
+OpenSSL::OCSP::Response
+OpenSSL::OCSP::SingleResponse
+OpenSSL::OpenSSLError
+OpenSSL::PKCS12
+OpenSSL::PKCS12::PKCS12Error
+OpenSSL::PKCS5
+OpenSSL::PKCS7
+OpenSSL::PKCS7::PKCS7Error
+OpenSSL::PKCS7::RecipientInfo
+OpenSSL::PKCS7::SignerInfo
+OpenSSL::PKey
+OpenSSL::PKey::DH
+OpenSSL::PKey::DHError
+OpenSSL::PKey::DSA
+OpenSSL::PKey::DSAError
+OpenSSL::PKey::EC
+OpenSSL::PKey::EC::Group
+OpenSSL::PKey::EC::Group::Error
+OpenSSL::PKey::EC::Point
+OpenSSL::PKey::EC::Point::Error
+OpenSSL::PKey::ECError
+OpenSSL::PKey::PKey
+OpenSSL::PKey::PKeyError
+OpenSSL::PKey::RSA
+OpenSSL::PKey::RSAError
+OpenSSL::Random
+OpenSSL::Random::RandomError
+OpenSSL::SSL
+OpenSSL::SSL::SSLContext
+OpenSSL::SSL::SSLError
+OpenSSL::SSL::SSLErrorWaitReadable
+OpenSSL::SSL::SSLErrorWaitWritable
+OpenSSL::SSL::SSLServer
+OpenSSL::SSL::SSLSocket
+OpenSSL::SSL::Session
+OpenSSL::SSL::Session::SessionError
+OpenSSL::SSL::SocketForwarder
+OpenSSL::Timestamp
+OpenSSL::Timestamp::Factory
+OpenSSL::Timestamp::Request
+OpenSSL::Timestamp::Response
+OpenSSL::Timestamp::TimestampError
+OpenSSL::Timestamp::TokenInfo
+OpenSSL::X509
+OpenSSL::X509::Attribute
+OpenSSL::X509::AttributeError
+OpenSSL::X509::CRL
+OpenSSL::X509::CRLError
+OpenSSL::X509::Certificate
+OpenSSL::X509::CertificateError
+OpenSSL::X509::Extension
+OpenSSL::X509::Extension::AuthorityInfoAccess
+OpenSSL::X509::Extension::AuthorityKeyIdentifier
+OpenSSL::X509::Extension::CRLDistributionPoints
+OpenSSL::X509::Extension::Helpers
+OpenSSL::X509::Extension::SubjectKeyIdentifier
+OpenSSL::X509::ExtensionError
+OpenSSL::X509::ExtensionFactory
+OpenSSL::X509::Marshal
+OpenSSL::X509::Marshal::ClassMethods
+OpenSSL::X509::Name
+OpenSSL::X509::Name::RFC2253DN
+OpenSSL::X509::NameError
+OpenSSL::X509::Request
+OpenSSL::X509::RequestError
+OpenSSL::X509::Revoked
+OpenSSL::X509::RevokedError
+OpenSSL::X509::Store
+OpenSSL::X509::StoreContext
+OpenSSL::X509::StoreError
+unknown
+ads via Carbon
+Your new development career awaits. Check out the latest listings.
+ads via Carbon
+OpenSSL::X509::Certificate
+Implementation of an X.509 certificate as specified in RFC 5280. Provides access to a certificate's attributes and allows certificates to be read from a string, but also supports the creation of new certificates from scratch.
+
+Reading a certificate from a file¶ ↑
+Certificate is capable of handling DER-encoded certificates and certificates encoded in OpenSSL's PEM format.
+
+raw = File.read "cert.cer" # DER- or PEM-encoded
+certificate = OpenSSL::X509::Certificate.new raw
+Saving a certificate to a file¶ ↑
+A certificate may be encoded in DER format
+
+cert = ...
+File.open("cert.cer", "wb") { |f| f.print cert.to_der }
+or in PEM format
+
+cert = ...
+File.open("cert.pem", "wb") { |f| f.print cert.to_pem }
+X.509 certificates are associated with a private/public key pair, typically a RSA, DSA or ECC key (see also OpenSSL::PKey::RSA, OpenSSL::PKey::DSA and OpenSSL::PKey::EC), the public key itself is stored within the certificate and can be accessed in form of an OpenSSL::PKey. Certificates are typically used to be able to associate some form of identity with a key pair, for example web servers serving pages over HTTPs use certificates to authenticate themselves to the user.
+
+The public key infrastructure (PKI) model relies on trusted certificate authorities ("root CAs") that issue these certificates, so that end users need to base their trust just on a selected few authorities that themselves again vouch for subordinate CAs issuing their certificates to end users.
+
+The OpenSSL::X509 module provides the tools to set up an independent PKI, similar to scenarios where the 'openssl' command line tool is used for issuing certificates in a private PKI.
+
+Creating a root CA certificate and an end-entity certificate¶ ↑
+First, we need to create a "self-signed" root certificate. To do so, we need to generate a key first. Please note that the choice of "1" as a serial number is considered a security flaw for real certificates. Secure choices are integers in the two-digit byte range and ideally not sequential but secure random numbers, steps omitted here to keep the example concise.
+
+root_key = OpenSSL::PKey::RSA.new 2048 # the CA's public/private key
+root_ca = OpenSSL::X509::Certificate.new
+root_ca.version = 2 # cf. RFC 5280 - to make it a "v3" certificate
+root_ca.serial = 1
+root_ca.subject = OpenSSL::X509::Name.parse "/DC=org/DC=ruby-lang/CN=Ruby CA"
+root_ca.issuer = root_ca.subject # root CA's are "self-signed"
+root_ca.public_key = root_key.public_key
+root_ca.not_before = Time.now
+root_ca.not_after = root_ca.not_before + 2 * 365 * 24 * 60 * 60 # 2 years validity
+ef = OpenSSL::X509::ExtensionFactory.new
+ef.subject_certificate = root_ca
+ef.issuer_certificate = root_ca
+root_ca.add_extension(ef.create_extension("basicConstraints","CA:TRUE",true))
+root_ca.add_extension(ef.create_extension("keyUsage","keyCertSign, cRLSign", true))
+root_ca.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
+root_ca.add_extension(ef.create_extension("authorityKeyIdentifier","keyid:always",false))
+root_ca.sign(root_key, OpenSSL::Digest::SHA256.new)
+The next step is to create the end-entity certificate using the root CA certificate.
+
+key = OpenSSL::PKey::RSA.new 2048
+cert = OpenSSL::X509::Certificate.new
+cert.version = 2
+cert.serial = 2
+cert.subject = OpenSSL::X509::Name.parse "/DC=org/DC=ruby-lang/CN=Ruby certificate"
+cert.issuer = root_ca.subject # root CA is the issuer
+cert.public_key = key.public_key
+cert.not_before = Time.now
+cert.not_after = cert.not_before + 1 * 365 * 24 * 60 * 60 # 1 years validity
+ef = OpenSSL::X509::ExtensionFactory.new
+ef.subject_certificate = cert
+ef.issuer_certificate = root_ca
+cert.add_extension(ef.create_extension("keyUsage","digitalSignature", true))
+cert.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
+cert.sign(root_key, OpenSSL::Digest::SHA256.new)
+Public Class Methods
+new => cert
+new(string) => cert
+Public Instance Methods
+cert1 == cert2 → true | false
+Compares the two certificates. Note that this takes into account all fields, not just the issuer name and the serial number.
+
+add_extension(extension) => extension
+check_private_key(key) → true | false
+Returns true if key is the corresponding private key to the Subject Public Key Information, false otherwise.
+
+extensions => [extension...]
+extensions = [ext...] => [ext...]
+initialize_copy(p1)
+inspect()
+issuer => name
+issuer = name => name
+not_after => time
+not_after = time => time
+not_before => time
+not_before = time => time
+pretty_print(q)
+public_key => key
+public_key = key
+serial => integer
+serial = integer => integer
+sign(key, digest) => self
+signature_algorithm => string
+subject => name
+subject = name => name
+to_der => string
+to_pem => string
+Also aliased as: to_s
+to_s()
+Alias for: to_pem
+to_text => string
+verify(key) => true | false
+Verifies the signature of the certificate, with the public key key. key must be an instance of OpenSSL::PKey.
+
+version => integer
+version = integer => integer
+This page was generated for Ruby 2.4.0
+
+Ruby-doc.org is a service of James Britt and Neurogami, an erratic source of art, music, and technology.
+
+Generated with Ruby-doc Rdoc Generator 0.44.2.
